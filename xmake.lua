@@ -1,17 +1,27 @@
 add_rules("mode.debug", "mode.release")
-set_languages("cxx26")
+set_languages("cxxlatest")
 
 add_includedirs(".")
 
 add_requires("spdlog")
--- add_requires("nlohmann_json")
+add_requires("gtest")
+
+target("libwots")
+    set_kind("static")
+    add_packages("spdlog")
+    add_files("wots-cli/wots.cpp")
 
 target("wots-cli")
-set_kind("binary")
-set_rundir("$(projectdir)")
-add_files("wots-cli/*.cpp")
-add_packages("spdlog")
--- add_packages("nlohmann_json")
+    set_kind("binary")
+    add_packages("spdlog")
+    add_deps("libwots")
+    add_files("wots-cli/main.cpp")
+
+target("tests")
+    set_kind("binary")
+    add_packages("gtest")
+    add_deps("libwots")
+    add_files("tests/test.cpp")
 
 --
 -- If you want to known more usage about xmake, please see https://xmake.io
