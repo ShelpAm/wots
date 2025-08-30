@@ -1,6 +1,7 @@
 #pragma once
 #include <filesystem>
 #include <spdlog/spdlog.h>
+#include <wots-cli/wots.hpp>
 
 namespace wots {
 
@@ -41,9 +42,15 @@ class Make_symlink : public Task {
     }
     void run() override
     {
-        // TODO(shelpam): not portable, sometimes should use
-        // create_directory_symlink
-        fs::create_symlink(to_, from_);
+        if (fs::is_regular_file(to_)) {
+            fs::create_symlink(to_, from_);
+        }
+        else if (fs::is_directory(to_)) {
+            fs::create_directory_symlink(to_, from_);
+        }
+        else {
+            throw Unsupported_filetype_error{};
+        }
     }
     void log() override
     {
