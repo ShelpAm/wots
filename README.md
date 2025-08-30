@@ -14,7 +14,7 @@ I created this tool because `stow` has bug in dotfile management with tree foldi
 
 ## Installation
 
-### Prerequisite
+### Prerequisites
 
 Before compiling wots, make sure you have the following installed:
 * [C++23](https://en.cppreference.com/w/cpp/23.html) compatible compiler
