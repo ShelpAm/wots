@@ -1,6 +1,8 @@
+#pragma once
 #include <filesystem>
 #include <map>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
 namespace wots {
@@ -16,53 +18,24 @@ class File_conflict_error {};
 
 class Unsupported_filetype_error {};
 
+struct Prework_result {
+    std::map<fs::path, bool> should_unfold;
+    std::unordered_map<fs::path, std::vector<std::string_view>>
+        origin_packages_of_path; // Packages who contain `path`
+};
+
+Prework_result prework(fs::path const &dotfiles_dir,
+                       std::vector<std::string_view> const &packages);
+
 void perform_wots(fs::path const &dotfiles_dir, fs::path const &install_dir,
                   std::vector<std::string_view> const &packages);
 
-// @brief: Throws Unsupported_filetype_error if packages have conflict
-// files.
+// @throws: Unsupported_filetype_error if packages have unsupported filetype(s).
 void detect_unsupported_filetype(fs::path const &dotfiles_dir,
                                  std::vector<std::string_view> const &packages);
 
-// @brief: Throws File_conflict_error if packages have conflict files.
+// @throws: File_conflict_error if packages have conflict files.
 void detect_file_conflicts(fs::path const &dotfiles_dir,
                            std::vector<std::string_view> const &packages);
-
-// [[nodiscard]] std::map<fs::path, fs::path>
-// get_mapping(std::vector<std::string_view> const &packages) const;
-
-// @brief Processes all children or delays to the parent.
-// @return If this directory can be folded
-// bool do_wots(fs::path const &current, fs::path const &package_root);
-
-// class Wots {
-//   public:
-//     Wots(std::string dotfiles_dir, std::string target_dir) noexcept;
-//
-//     void wots(std::vector<std::string_view> const &packages);
-//
-//   private:
-//     fs::path dotfiles_dir_;
-//     fs::path install_dir_;
-//
-//     // @brief: Throws Unsupported_filetype_error if packages have conflict
-//     // files.
-//     void detect_unsupported_filetype(
-//         std::vector<std::string_view> const &packages) const;
-//
-//     // @brief: Throws File_conflict_error if packages have conflict files.
-//     void
-//     detect_file_conflicts(std::vector<std::string_view> const &packages)
-//     const;
-//
-//     // [[nodiscard]] std::map<fs::path, fs::path>
-//     // get_mapping(std::vector<std::string_view> const &packages) const;
-//
-//     bool should_unfold(fs::path const &dir);
-//
-//     // @brief Processes all children or delays to the parent.
-//     // @return If this directory can be folded
-//     bool do_wots(fs::path const &current, fs::path const &package_root);
-// };
 
 } // namespace wots

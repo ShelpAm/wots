@@ -1,18 +1,40 @@
+#include <wots-cli/main.h>
+
 #include <print>
 #include <spdlog/spdlog.h>
 #include <wots-cli/wots.hpp>
 
+void usage(char **argv)
+{
+    std::println("usage: {} [<options>...] <dotfiles-dir> <install-dir> "
+                 "<packages>...",
+                 *argv);
+    std::println("OPTIONS: -v --verbose  turn on debugging mode\n"
+                 "         -n --dry-run  do not create symlinks, but print the "
+                 "symlinks tasks\n");
+}
+
 int main(int argc, char *argv[])
 {
-    spdlog::set_level(spdlog::level::debug);
-
     if (argc < 4) {
-        std::println("usage: {} <dotfiles-dir> <install-dir> <packages>...",
-                     *argv);
+        usage(argv);
         std::exit(EXIT_FAILURE);
     }
 
+    spdlog::set_level(spdlog::level::info);
+
     ++argv; // Skip argv[0]
+
+    while (*argv != nullptr && **argv == '-') {
+        std::string_view arg{*argv++};
+        if (arg == "-v" || arg == "--verbose") {
+            spdlog::set_level(spdlog::level::debug);
+        }
+        else if (arg == "-n" || arg == "--dry-run") {
+            dry_run = true;
+        }
+    }
+
     std::string_view dotfiles_dir{*argv++};
     std::string_view install_dir{*argv++};
     std::vector<std::string_view> packages;
@@ -21,6 +43,7 @@ int main(int argc, char *argv[])
     }
 
     try {
+        // wots::unwots(dotfiles_dir, install_dir, packages);
         wots::perform_wots(dotfiles_dir, install_dir, packages);
     }
     // TODO(shelpam): exceptions should be extended with more information.
