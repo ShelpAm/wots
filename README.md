@@ -8,9 +8,8 @@ I created this tool because `stow` has bug in dotfile management with tree foldi
 
 ## Principles
 
-* User created directories shouldn't be removed, since they're not owned by wots. What wots should
+* User-created directories shouldn't be removed, since they're not owned by wots. What wots should
   do is just patching the install directory.
-
 
 ## Installation
 

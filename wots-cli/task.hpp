@@ -34,6 +34,7 @@ class Make_directory : public Task {
   private:
     fs::path dir_;
 };
+
 class Make_symlink : public Task {
   public:
     Make_symlink(fs::path from, fs::path to)

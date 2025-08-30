@@ -72,7 +72,7 @@ void wots::detect_file_conflicts(fs::path const &dotfiles_dir,
             }
             auto p = fs::relative(entry, package_root);
             if (s.contains(p)) {
-                spdlog::debug("detected conflict: {}", p.string());
+                spdlog::error("detected conflict: {}", p.string());
                 throw File_conflict_error{};
             }
             s.insert(p);
@@ -130,7 +130,7 @@ wots::prework(fs::path const &dotfiles_dir, fs::path const &install_dir,
         if (fs::is_directory(link) && !is_under_symlink(link, install_dir)) {
             should_unfold |= true;
         }
-        spdlog::debug("{}: n_origin_packages={} n_dotted_children={}",
+        spdlog::debug("{}: origin_packages_of_dir={} n_dotted_children={}",
                       rel_path.string(),
                       origin_packages_of_dir[rel_path].size(),
                       n_dotted_children[rel_path]);
@@ -174,18 +174,6 @@ wots::calculate_tasks(fs::path const &dotfiles_dir, fs::path const &install_dir,
                 auto from = install_dir /
                             replace_dots(rel_path / child.path().filename());
                 tasks.push_back(std::make_unique<Make_symlink>(from, to));
-                // if (fs::exists(from)) {
-                //     if (!fs::is_symlink(from) || fs::read_symlink(from)
-                //     != to) {
-                //         throw std::runtime_error(std::format(
-                //             "{} already exists, wots cann't override
-                //             it.", from.string()));
-                //     }
-                // }
-                // else {
-                //     tasks.push_back(std::make_unique<Make_symlink>(from,
-                //     to));
-                // }
             }
         }
     }
@@ -198,15 +186,23 @@ void wots::unwots(fs::path const &dotfiles_dir,
     for (auto const &task : tasks) {
         if (auto *t =
                 dynamic_cast<Make_symlink *>(task.get())) { // Maybe slow here
+            auto from = t->from();
             auto abs_to = fs::absolute(t->to());
             auto abs_dotfiles_dir = fs::absolute(dotfiles_dir);
-            bool is_symlink{fs::is_symlink(t->from())};
-            bool owned{abs_to.string().starts_with(abs_dotfiles_dir.string())};
-            spdlog::debug("{} is_symlink={} owned={}", t->from().string(),
-                          is_symlink, owned);
-            if (is_symlink && owned) {
-                spdlog::info("Removing old link: {}", t->from().string());
-                fs::remove(t->from());
+            bool from_is_symlink{fs::is_symlink(from)};
+            bool from_owned{
+                abs_to.string().starts_with(abs_dotfiles_dir.string())};
+            spdlog::debug("{} is_symlink={} owned={}", from.string(),
+                          from_is_symlink, from_owned);
+            if (from_is_symlink && from_owned) {
+                spdlog::info("Removing old link: {}", from.string());
+                fs::remove(from);
+            }
+            else if (fs::exists(from)) {
+                spdlog::error("Linking {}: {} already exists and is not "
+                              "symlink or owned, wots can't override it.",
+                              abs_to.string(), from.string());
+                throw File_conflict_error{};
             }
         }
     }

@@ -28,6 +28,19 @@ TEST(Wots, FileConflict)
                  File_conflict_error);
 }
 
+TEST(Wots, ConflictWithExsitingFile)
+{
+    auto tmp = fs::temp_directory_path() / "wots";
+    auto dotfiles_dir = tmp / "dotfiles";
+    auto const &install_dir = tmp;
+    fs::create_directories(dotfiles_dir / "pack");
+    write_to_file(dotfiles_dir / "pack" / "a", "from pack");
+    write_to_file(install_dir / "a", "already exists");
+
+    EXPECT_THROW(perform_wots(dotfiles_dir, install_dir, {"pack"}),
+                 File_conflict_error);
+}
+
 int main(int argc, char **argv)
 {
     testing::InitGoogleTest(&argc, argv);
