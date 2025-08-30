@@ -9,19 +9,22 @@ add_requires("gtest")
 target("wots")
     set_kind("static")
     add_packages("spdlog")
-    add_files("wots-cli/wots.cpp")
+    add_files("wots/wots.cpp")
+    add_headerfiles("wots/*.h")
 
 target("wots-cli")
     set_kind("binary")
     add_packages("spdlog")
     add_deps("wots")
     add_files("wots-cli/main.cpp")
+    add_headerfiles("wots-cli/*.h")
 
 target("tests")
     set_kind("binary")
     add_packages("gtest")
     add_deps("wots")
     add_files("tests/test.cpp")
+    add_headerfiles("tests/*.h")
 
 --
 -- If you want to known more usage about xmake, please see https://xmake.io

@@ -2,7 +2,7 @@
 
 #include <print>
 #include <spdlog/spdlog.h>
-#include <wots-cli/wots.hpp>
+#include <wots/wots.hpp>
 
 void usage(char **argv)
 {

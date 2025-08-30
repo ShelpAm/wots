@@ -1,7 +1,7 @@
 #pragma once
 #include <filesystem>
 #include <spdlog/spdlog.h>
-#include <wots-cli/wots.hpp>
+#include <wots/wots.hpp>
 
 namespace wots {
 

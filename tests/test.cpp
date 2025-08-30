@@ -1,6 +1,6 @@
 #include <fstream>
 #include <gtest/gtest.h>
-#include <wots-cli/wots.hpp>
+#include <wots/wots.hpp>
 
 using namespace wots;
 

@@ -1,4 +1,4 @@
-#include <wots-cli/wots.hpp>
+#include <wots/wots.hpp>
 
 #include <filesystem>
 #include <spdlog/spdlog.h>
@@ -9,7 +9,7 @@
 #include <unordered_set>
 #include <vector>
 #include <wots-cli/main.h>
-#include <wots-cli/task.hpp>
+#include <wots/task.hpp>
 
 using namespace wots;
 
