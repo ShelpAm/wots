@@ -43,7 +43,6 @@ int main(int argc, char *argv[])
     }
 
     try {
-        // wots::unwots(dotfiles_dir, install_dir, packages);
         wots::perform_wots(dotfiles_dir, install_dir, packages);
     }
     // TODO(shelpam): exceptions should be extended with more information.

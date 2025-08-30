@@ -30,9 +30,9 @@ fs::path wots::replace_all_subpath_prefix(fs::path const &path,
     return result;
 }
 
-static fs::path replace_dots(fs::path const &p)
+static fs::path replace_dots(fs::path const &path)
 {
-    return replace_all_subpath_prefix(p, "dot-", ".");
+    return replace_all_subpath_prefix(path, "dot-", ".");
 }
 
 void wots::perform_wots(fs::path const &dotfiles_dir,
@@ -42,48 +42,16 @@ void wots::perform_wots(fs::path const &dotfiles_dir,
     detect_unsupported_filetype(dotfiles_dir, packages);
     detect_file_conflicts(dotfiles_dir, packages);
 
-    // Precalculate
-    auto [should_unfold, origin_packages_of_path] =
-        prework(dotfiles_dir, packages);
-
-    // Perform actual linkages
-    std::vector<std::unique_ptr<Task>> tasks;
-    for (auto const &[rel_path, should] : should_unfold) {
-        if (!should) {
-            continue;
-        }
-        spdlog::debug("should_unfold: {}", rel_path.string());
-        tasks.push_back(std::make_unique<Make_directory>(
-            replace_dots(install_dir / rel_path)));
-        for (auto package : origin_packages_of_path[rel_path]) {
-            auto package_root = dotfiles_dir / package;
-            auto unfolded_dir = package_root / rel_path;
-            for (auto const &child : fs::directory_iterator(unfolded_dir)) {
-                if (should_unfold[fs::relative(child.path(), package_root)]) {
-                    continue;
-                }
-                auto to = fs::absolute(unfolded_dir / child.path().filename());
-                auto link = install_dir / rel_path / child.path().filename();
-                link = replace_dots(link);
-                if (fs::exists(link)) {
-                    if (!fs::is_symlink(link) || fs::read_symlink(link) != to) {
-                        throw std::runtime_error(std::format(
-                            "{} already exists, wots cann't override it.",
-                            link.string()));
-                    }
-                }
-                else {
-                    tasks.push_back(std::make_unique<Make_symlink>(link, to));
-                }
-            }
-        }
-    }
+    auto prework_result = prework(dotfiles_dir, install_dir, packages);
+    auto tasks = calculate_tasks(dotfiles_dir, install_dir, prework_result);
+    unwots(dotfiles_dir, tasks);
 
     if (dry_run) {
-        spdlog::info("In dry-run mode, won't create symlinks. The followings "
-                     "are symlinks to be created:");
+        spdlog::info("Now is in dry-run mode, wots won't create symlinks.");
     }
+    // Runs actual tasks
     for (auto const &task : tasks) {
+        task->log();
         if (!dry_run) {
             task->run();
         }
@@ -127,13 +95,13 @@ void wots::detect_unsupported_filetype(
 }
 
 wots::Prework_result
-wots::prework(fs::path const &dotfiles_dir,
+wots::prework(fs::path const &dotfiles_dir, fs::path const &install_dir,
               std::vector<std::string_view> const &packages)
 {
     // For relative paths
     std::map<fs::path, bool> should_unfold;
     std::unordered_map<fs::path, std::vector<std::string_view>>
-        origin_packages_of_path;
+        origin_packages_of_dir;
     std::unordered_map<fs::path, std::size_t> n_dotted_children;
     for (auto package : packages) {
         auto package_root = dotfiles_dir / package;
@@ -142,7 +110,7 @@ wots::prework(fs::path const &dotfiles_dir,
             auto relative_path = fs::relative(entry, package_root);
             should_unfold.insert({relative_path, false});
             if (entry.is_directory()) {
-                origin_packages_of_path[relative_path].push_back(package);
+                origin_packages_of_dir[relative_path].push_back(package);
             }
             if (entry.path().filename().string().starts_with("dot-")) {
                 spdlog::debug("dot- found in {}", entry.path().string());
@@ -154,18 +122,103 @@ wots::prework(fs::path const &dotfiles_dir,
             }
         }
     }
+    // Path already existing should be unfolded.
     for (auto &[rel_path, should_unfold] : should_unfold) {
-        should_unfold = origin_packages_of_path[rel_path].size() > 1 ||
+        should_unfold = origin_packages_of_dir[rel_path].size() > 1 ||
                         n_dotted_children[rel_path] > 0;
+        auto link = install_dir / replace_dots(rel_path);
+        if (fs::is_directory(link) && !is_under_symlink(link, install_dir)) {
+            should_unfold |= true;
+        }
         spdlog::debug("{}: n_origin_packages={} n_dotted_children={}",
                       rel_path.string(),
-                      origin_packages_of_path[rel_path].size(),
+                      origin_packages_of_dir[rel_path].size(),
                       n_dotted_children[rel_path]);
     }
     // Package roots also should unfold, no matter what.
     should_unfold["."] = true;
-    origin_packages_of_path["."] = packages;
+    origin_packages_of_dir["."] = packages;
+
+    for (auto const &[p, s] : should_unfold) {
+        if (s) {
+            spdlog::debug("should_unfold: {}", p.string());
+        }
+    }
 
     return {.should_unfold = should_unfold,
-            .origin_packages_of_path = origin_packages_of_path};
+            .origin_packages_of_dir = origin_packages_of_dir};
+}
+
+std::vector<std::unique_ptr<Task>>
+wots::calculate_tasks(fs::path const &dotfiles_dir, fs::path const &install_dir,
+                      Prework_result const &prework_result)
+{
+    auto [should_unfold, origin_packages_of_dir] = prework_result;
+
+    std::vector<std::unique_ptr<Task>> tasks;
+    for (auto const &[rel_path, should] : should_unfold) {
+        if (!should) {
+            continue;
+        }
+        tasks.push_back(std::make_unique<Make_directory>(
+            install_dir / replace_dots(rel_path)));
+        for (auto package : origin_packages_of_dir[rel_path]) {
+            auto package_root = dotfiles_dir / package;
+            auto unfolded_dir = package_root / rel_path;
+            for (auto const &child : fs::directory_iterator(unfolded_dir)) {
+                if (should_unfold[fs::relative(child.path(), package_root)]) {
+                    continue;
+                }
+                auto to = unfolded_dir / child.path().filename();
+                to = fs::absolute(to);
+                auto from = install_dir /
+                            replace_dots(rel_path / child.path().filename());
+                tasks.push_back(std::make_unique<Make_symlink>(from, to));
+                // if (fs::exists(from)) {
+                //     if (!fs::is_symlink(from) || fs::read_symlink(from)
+                //     != to) {
+                //         throw std::runtime_error(std::format(
+                //             "{} already exists, wots cann't override
+                //             it.", from.string()));
+                //     }
+                // }
+                // else {
+                //     tasks.push_back(std::make_unique<Make_symlink>(from,
+                //     to));
+                // }
+            }
+        }
+    }
+    return tasks;
+}
+
+void wots::unwots(fs::path const &dotfiles_dir,
+                  std::vector<std::unique_ptr<Task>> const &tasks)
+{
+    for (auto const &task : tasks) {
+        if (auto *t =
+                dynamic_cast<Make_symlink *>(task.get())) { // Maybe slow here
+            auto abs_to = fs::absolute(t->to());
+            auto abs_dotfiles_dir = fs::absolute(dotfiles_dir);
+            bool is_symlink{fs::is_symlink(t->from())};
+            bool owned{abs_to.string().starts_with(abs_dotfiles_dir.string())};
+            spdlog::debug("{} is_symlink={} owned={}", t->from().string(),
+                          is_symlink, owned);
+            if (is_symlink && owned) {
+                spdlog::info("Removing old link: {}", t->from().string());
+                fs::remove(t->from());
+            }
+        }
+    }
+}
+
+bool wots::is_under_symlink(fs::path p, fs::path const &end)
+{
+    while (p != end) {
+        if (fs::is_symlink(p)) {
+            return true;
+        }
+        p = p.parent_path();
+    }
+    return false;
 }

@@ -15,6 +15,7 @@ class Task {
     Task &operator=(Task &&) = delete;
     virtual ~Task() = default;
     virtual void run() = 0;
+    virtual void log() = 0;
 };
 
 class Make_directory : public Task {
@@ -22,8 +23,11 @@ class Make_directory : public Task {
     Make_directory(fs::path dir) : dir_(std::move(dir)) {}
     void run() override
     {
-        spdlog::info("Creating directory: {}", dir_.string());
         fs::create_directory(dir_);
+    }
+    void log() override
+    {
+        spdlog::info("Creating directory: {}", dir_.string());
     }
 
   private:
@@ -37,11 +41,22 @@ class Make_symlink : public Task {
     }
     void run() override
     {
-        spdlog::info("Creating symlink: {} -> {}", to_.string(),
-                     from_.string());
         // TODO(shelpam): not portable, sometimes should use
         // create_directory_symlink
         fs::create_symlink(to_, from_);
+    }
+    void log() override
+    {
+        spdlog::info("Creating symlink: {} -> {}", from_.string(),
+                     to_.string());
+    }
+    [[nodiscard]] fs::path const &from() const
+    {
+        return from_;
+    }
+    [[nodiscard]] fs::path const &to() const
+    {
+        return to_;
     }
 
   private:

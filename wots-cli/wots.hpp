@@ -13,6 +13,9 @@ fs::path replace_all_subpath_prefix(fs::path const &path,
                                     std::string_view prefix,
                                     std::string_view replacement);
 
+// @return If p is under some symlink, or p is a symlink.
+bool is_under_symlink(fs::path p, fs::path const &end);
+
 // Directories can be merged, while same dest filepath is regarded as conflict.
 class File_conflict_error {};
 
@@ -21,11 +24,20 @@ class Unsupported_filetype_error {};
 struct Prework_result {
     std::map<fs::path, bool> should_unfold;
     std::unordered_map<fs::path, std::vector<std::string_view>>
-        origin_packages_of_path; // Packages who contain `path`
+        origin_packages_of_dir; // Packages who contain `path`
 };
 
 Prework_result prework(fs::path const &dotfiles_dir,
+                       fs::path const &install_dir,
                        std::vector<std::string_view> const &packages);
+
+class Task;
+std::vector<std::unique_ptr<Task>>
+calculate_tasks(fs::path const &dotfiles_dir, fs::path const &install_dir,
+                Prework_result const &result);
+
+void unwots(fs::path const &dotfiles_dir,
+            std::vector<std::unique_ptr<Task>> const &tasks);
 
 void perform_wots(fs::path const &dotfiles_dir, fs::path const &install_dir,
                   std::vector<std::string_view> const &packages);
