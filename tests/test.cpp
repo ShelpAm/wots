@@ -41,6 +41,16 @@ TEST(Wots, ConflictWithExsitingFile)
                  File_conflict_error);
 }
 
+TEST(Wots, ShouldUnfoldfile)
+{
+    auto tmp = fs::temp_directory_path() / "wots";
+    auto dotfiles_dir = tmp / "dotfiles";
+    auto const &install_dir = tmp;
+    fs::create_directories(dotfiles_dir / "bin" / "test");
+    write_to_file(dotfiles_dir / "bin" / "test" / "dot-bin", "");
+    perform_wots(dotfiles_dir, install_dir, {"bin"});
+    EXPECT_TRUE(fs::exists(install_dir / ".bin"));
+}
 int main(int argc, char **argv)
 {
     testing::InitGoogleTest(&argc, argv);
