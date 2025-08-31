@@ -1,4 +1,4 @@
-#include <wots-cli/main.h>
+#include <wots-cli/main.hpp>
 
 #include <print>
 #include <spdlog/spdlog.h>

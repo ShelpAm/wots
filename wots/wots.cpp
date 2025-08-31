@@ -8,7 +8,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#include <wots-cli/main.h>
+#include <wots-cli/main.hpp>
 #include <wots/task.hpp>
 
 using namespace wots;
