@@ -23,6 +23,8 @@ int main(int argc, char *argv[])
 
     spdlog::set_level(spdlog::level::info);
 
+    spdlog::debug("argc: {}", argc);
+
     ++argv; // Skip argv[0]
 
     while (*argv != nullptr && **argv == '-') {
@@ -39,6 +41,7 @@ int main(int argc, char *argv[])
     std::string_view install_dir{*argv++};
     std::vector<std::string_view> packages;
     while (*argv != nullptr) {
+        spdlog::debug("Reading packages *argv: {}", *argv);
         packages.emplace_back(*argv++);
     }
 
