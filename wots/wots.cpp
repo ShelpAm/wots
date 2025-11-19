@@ -196,7 +196,9 @@ void wots::unwots(fs::path const &dotfiles_dir,
                           from_is_symlink, from_owned);
             if (from_is_symlink && from_owned) {
                 spdlog::info("Removing old link: {}", from.string());
-                fs::remove(from);
+                if (!dry_run) {
+                    fs::remove(from);
+                }
             }
             else if (fs::exists(from)) {
                 spdlog::error("Linking {}: {} already exists and is not "
