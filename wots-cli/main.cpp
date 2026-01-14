@@ -1,4 +1,4 @@
-#include <wots-cli/main.hpp>
+#include "main.hpp"
 
 #include <print>
 #include <spdlog/spdlog.h>
@@ -32,8 +32,8 @@ int main(int argc, char *argv[])
         if (arg == "-v" || arg == "--verbose") {
             spdlog::set_level(spdlog::level::debug);
         }
-        else if (arg == "-n" || arg == "--dry-run") {
-            dry_run = true;
+        else if (arg == "-n" || arg == "--no-dry-run") {
+            dry_run = false;
         }
     }
 

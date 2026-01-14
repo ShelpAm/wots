@@ -1,3 +1,3 @@
 #pragma once
 
-inline bool dry_run{};
+inline bool dry_run{true};

@@ -18,7 +18,9 @@ I created this tool because `stow` has bug in dotfile management with tree foldi
 Before compiling wots, make sure you have the following installed:
 * [C++23](https://en.cppreference.com/w/cpp/23.html) compatible compiler
 * [git](https://git-scm.com/)
-* [xmake](https://xmake.io/)
+* Build system and dependency manager
+    * [xmake](https://xmake.io/)
+    * [CMake](https://cmake.org/) and [Conan](https://conan.io/)
 
 ### Building
 
@@ -29,6 +31,15 @@ cd wots
 xmake
 ```
 
+Clone the repository and build with **cmake** and **conan**:
+```bash
+git clone https://github.com/ShelpAm/wots.git
+cd wots
+conan install . -of build -b missing
+cmake --preset=<your-preset>
+cmake --build build
+```
+
 Find built executables in `./build/`.
 
 ### Testing
@@ -37,3 +48,5 @@ To run tests:
 ```bash
 xmake run tests
 ```
+
+Sorry for that we haven't provided CMake module for testing.
