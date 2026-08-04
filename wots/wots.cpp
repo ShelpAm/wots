@@ -8,7 +8,6 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#include <wots-cli/main.hpp>
 #include <wots/task.hpp>
 
 using namespace wots;
@@ -37,14 +36,15 @@ static fs::path replace_dots(fs::path const &path)
 
 void wots::perform_wots(fs::path const &dotfiles_dir,
                         fs::path const &install_dir,
-                        std::vector<std::string_view> const &packages)
+                        std::vector<std::string_view> const &packages,
+                        bool dry_run)
 {
     detect_unsupported_filetype(dotfiles_dir, packages);
     detect_file_conflicts(dotfiles_dir, packages);
 
     auto prework_result = prework(dotfiles_dir, install_dir, packages);
     auto tasks = calculate_tasks(dotfiles_dir, install_dir, prework_result);
-    unwots(dotfiles_dir, tasks);
+    unwots(dotfiles_dir, tasks, dry_run);
 
     if (dry_run) {
         spdlog::info("Now is in dry-run mode, wots won't create symlinks.");
@@ -181,7 +181,8 @@ wots::calculate_tasks(fs::path const &dotfiles_dir, fs::path const &install_dir,
 }
 
 void wots::unwots(fs::path const &dotfiles_dir,
-                  std::vector<std::unique_ptr<Task>> const &tasks)
+                  std::vector<std::unique_ptr<Task>> const &tasks,
+                  bool dry_run)
 {
     for (auto const &task : tasks) {
         if (auto *t =

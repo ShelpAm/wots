@@ -1,5 +1,3 @@
-#include "main.hpp"
-
 #include <print>
 #include <spdlog/spdlog.h>
 #include <wots/wots.hpp>
@@ -27,6 +25,7 @@ int main(int argc, char *argv[])
 
     ++argv; // Skip argv[0]
 
+    bool dry_run{true};
     while (*argv != nullptr && **argv == '-') {
         std::string_view arg{*argv++};
         if (arg == "-v" || arg == "--verbose") {
@@ -46,7 +45,7 @@ int main(int argc, char *argv[])
     }
 
     try {
-        wots::perform_wots(dotfiles_dir, install_dir, packages);
+        wots::perform_wots(dotfiles_dir, install_dir, packages, dry_run);
     }
     // TODO(shelpam): exceptions should be extended with more information.
     catch (wots::File_conflict_error e) {

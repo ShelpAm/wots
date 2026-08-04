@@ -100,7 +100,7 @@ TEST_F(TempDirTest, SelfTest)
     Directory_structure const packs({{"p1/lc", "li hai"}}, {});
     packs.cast_to_fs(dotfiles_dir);
     EXPECT_TRUE(packs.exists_in(dotfiles_dir));
-    perform_wots(dotfiles_dir, install_dir, {"p1"});
+    perform_wots(dotfiles_dir, install_dir, {"p1"}, /*dry_run=*/false);
     EXPECT_TRUE(fs::exists(install_dir / "lc"));
     EXPECT_TRUE(read_file(install_dir / "lc") == "li hai");
 }
@@ -119,7 +119,8 @@ TEST(Wots, FileConflict)
     write_file(dotfiles_dir / "pack" / "b", "b");
     write_file(dotfiles_dir / "pack2" / "b", "2,b");
 
-    EXPECT_THROW(perform_wots(dotfiles_dir, install_dir, {"pack", "pack2"}),
+    EXPECT_THROW(perform_wots(dotfiles_dir, install_dir, {"pack", "pack2"},
+                              /*dry_run=*/false),
                  File_conflict_error);
 }
 
@@ -132,7 +133,8 @@ TEST(Wots, ConflictWithExsitingFile)
     write_file(dotfiles_dir / "pack" / "a", "from pack");
     write_file(install_dir / "a", "already exists");
 
-    EXPECT_THROW(perform_wots(dotfiles_dir, install_dir, {"pack"}),
+    EXPECT_THROW(perform_wots(dotfiles_dir, install_dir, {"pack"},
+                              /*dry_run=*/false),
                  File_conflict_error);
 }
 

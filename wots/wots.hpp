@@ -40,10 +40,12 @@ calculate_tasks(fs::path const &dotfiles_dir, fs::path const &install_dir,
                 Prework_result const &result);
 
 void unwots(fs::path const &dotfiles_dir,
-            std::vector<std::unique_ptr<Task>> const &tasks);
+            std::vector<std::unique_ptr<Task>> const &tasks,
+            bool dry_run = true);
 
 void perform_wots(fs::path const &dotfiles_dir, fs::path const &install_dir,
-                  std::vector<std::string_view> const &packages);
+                  std::vector<std::string_view> const &packages,
+                  bool dry_run = true);
 
 /// @throws Unsupported_filetype_error if packages have unsupported
 /// filetype(s).

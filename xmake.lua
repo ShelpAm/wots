@@ -17,14 +17,12 @@ target("wots-cli")
     add_packages("spdlog")
     add_deps("wots")
     add_files("wots-cli/main.cpp")
-    add_headerfiles("wots-cli/*.hpp")
 
 target("tests")
     set_kind("binary")
     add_packages("gtest")
     add_deps("wots")
     add_files("tests/test.cpp")
-    add_headerfiles("tests/*.h")
 
 --
 -- If you want to known more usage about xmake, please see https://xmake.io
