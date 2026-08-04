@@ -9,9 +9,9 @@ void usage(char **argv)
     std::println("usage: {} [<options>...] <dotfiles-dir> <install-dir> "
                  "<packages>...",
                  *argv);
-    std::println("OPTIONS: -v --verbose  turn on debugging mode\n"
-                 "         -n --dry-run  do not create symlinks, but print the "
-                 "symlinks tasks\n");
+    std::println("OPTIONS: -v --verbose     turn on debugging mode\n"
+                 "         -n --no-dry-run  create symlinks, instead of "
+                 "printing the symlinks tasks\n");
 }
 
 int main(int argc, char *argv[])
