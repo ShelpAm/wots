@@ -49,4 +49,24 @@ To run tests:
 xmake run tests
 ```
 
-Sorry for that we haven't provided CMake module for testing.
+With CMake, tests are enabled by default (requires GTest and Python 3):
+```bash
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
+Use `-DBUILD_TESTING=OFF` when configuring a build without test dependencies.
+
+### Usage
+
+By default, wots only previews the planned changes:
+```bash
+wots ~/.dotfiles ~ swaync
+```
+Pass `-n` / `--no-dry-run` to apply them:
+```bash
+wots -n ~/.dotfiles ~ swaync
+```
+Existing symlinks are replaced only when their resolved targets are inside the
+dotfiles directory. Conflicts are checked before old links are removed, and
+failures return a nonzero exit status. This preflight check does not provide
+rollback for filesystem errors during execution.
