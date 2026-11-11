@@ -8,7 +8,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
 find_package(spdlog REQUIRED)
-find_package(GTest REQUIRED)
+include(CTest)
+if(BUILD_TESTING)
+    find_package(GTest REQUIRED)
+endif()
 
 add_library(wots STATIC)
 target_sources(wots
@@ -37,3 +40,12 @@ set_target_properties(wots-cli
     PROPERTIES
         OUTPUT_NAME wots
 )
+
+if(BUILD_TESTING)
+    add_executable(wots-tests tests/test.cpp)
+    target_link_libraries(wots-tests PRIVATE wots GTest::gtest)
+    add_test(NAME wots-tests COMMAND wots-tests)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    add_test(NAME cli-regressions
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/cli_test.py $<TARGET_FILE:wots-cli>)
+endif()

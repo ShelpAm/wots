@@ -181,32 +181,38 @@ wots::calculate_tasks(fs::path const &dotfiles_dir, fs::path const &install_dir,
 }
 
 void wots::unwots(fs::path const &dotfiles_dir,
-                  std::vector<std::unique_ptr<Task>> const &tasks,
-                  bool dry_run)
+                  std::vector<std::unique_ptr<Task>> const &tasks, bool dry_run)
 {
+    std::vector<fs::path> links_to_remove;
+    auto root = fs::weakly_canonical(dotfiles_dir);
     for (auto const &task : tasks) {
-        if (auto *t =
-                dynamic_cast<Make_symlink *>(task.get())) { // Maybe slow here
-            auto from = t->from();
-            auto abs_to = fs::absolute(t->to());
-            auto abs_dotfiles_dir = fs::absolute(dotfiles_dir);
-            bool from_is_symlink{fs::is_symlink(from)};
-            bool from_owned{
-                abs_to.string().starts_with(abs_dotfiles_dir.string())};
-            spdlog::debug("{} is_symlink={} owned={}", from.string(),
-                          from_is_symlink, from_owned);
-            if (from_is_symlink && from_owned) {
-                spdlog::info("Removing old link: {}", from.string());
-                if (!dry_run) {
-                    fs::remove(from);
-                }
+        auto *link = dynamic_cast<Make_symlink *>(task.get());
+        if (!link) {
+            continue;
+        }
+        auto const &from = link->from();
+        if (fs::is_symlink(from)) {
+            auto target = fs::read_symlink(from);
+            if (target.is_relative()) {
+                target = from.parent_path() / target;
             }
-            else if (fs::exists(from)) {
-                spdlog::error("Linking {}: {} already exists and is not "
-                              "symlink or owned, wots can't override it.",
-                              abs_to.string(), from.string());
-                throw File_conflict_error{};
+            target = fs::weakly_canonical(target);
+            auto relative = target.lexically_relative(root);
+            if (!relative.empty() && *relative.begin() != "..") {
+                links_to_remove.push_back(from);
+                continue;
             }
+        }
+        if (fs::is_symlink(from) || fs::exists(from)) {
+            spdlog::error("Cannot replace unowned path: {}", from.string());
+            throw File_conflict_error{};
+        }
+    }
+    // Validate the complete plan before removing any existing link.
+    for (auto const &from : links_to_remove) {
+        spdlog::info("Removing old link: {}", from.string());
+        if (!dry_run) {
+            fs::remove(from);
         }
     }
 }
